@@ -25,3 +25,5 @@ jobs:
       - run: python historical_engine.py
       - run: python dip_signals_engine.py
       - run: python PORTFOLIO_ANALYSIS.py
+      - run: python fundamentals_engine.py
+      
