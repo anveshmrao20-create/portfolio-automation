@@ -1,0 +1,29 @@
+name: Monthly SIP Automation
+
+on:
+  schedule:
+    - cron: "30 9 5 * *"  # 3 PM IST on 5th
+  workflow_dispatch:
+
+jobs:
+  run-monthly:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Setup credentials
+        run: |
+          echo "${{ secrets.GOOGLE_CREDS }}" | base64 --decode > credentials.json
+
+      - name: Run SIP picker
+        run: python SMART_SIP_PICKER.py
