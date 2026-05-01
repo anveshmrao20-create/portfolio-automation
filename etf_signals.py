@@ -58,31 +58,67 @@ def run():
         rsi = safe_float(hist[-1][c+1])
         ema100 = safe_float(hist[-1][c+2])
 
-								
+		
         prev_rsi = safe_float(hist[-2][c+1]) if len(hist) > 2 else None
 
+        reason = []
+        score = 0
+        action = "HOLD"
+        dip = 0
+
+        # =====================
+        # 🔴 DATA VALIDATION
+        # =====================
         if close is None or rsi is None or ema100 is None:
+            action = "SKIPPED"
+            reason.append("Missing Data")
+
+            sig.append_row([
+                today, etf, action, 0,
+                close or 0, rsi or 0, ema100 or 0,
+                0, ",".join(reason)
+            ])
             continue
 
-										 
+        # =====================
+        # 🔴 OVERBOUGHT FILTER
+        # =====================
         if rsi >= 65:
+            action = "SKIPPED"
+            reason.append("Overbought RSI")
+
+            sig.append_row([
+                today, etf, action, 0,
+                close, rsi, ema100,
+                0, ",".join(reason)
+            ])
             continue
 
-        # ===== DIP LOGIC =====
+        # =====================
+        # 🔴 DIP CALCULATION
+        # =====================
         highs_3m = [safe_float(r[c]) for r in hist[-60:] if safe_float(r[c]) is not None]
         highs_6m = [safe_float(r[c]) for r in hist[-120:] if safe_float(r[c]) is not None]
-							
-								  
-							   
-									
+	   
+		  
+		  
+		 
 
-					 
-							 
-								  
-							   
-									
+	  
+		
+		  
+		  
+		 
 
         if not highs_3m:
+            action = "SKIPPED"
+            reason.append("Insufficient Data")
+
+            sig.append_row([
+                today, etf, action, 0,
+                close, rsi, ema100,
+                0, ",".join(reason)
+            ])
             continue
 
         high_3m = max(highs_3m)
@@ -95,12 +131,14 @@ def run():
             high_6m = max(highs_6m)
             dip_6m = ((high_6m - close) / high_6m) * 100
 
-        # ===== SCORING =====
+							 
 
-        score = 0
-        reason = []
+				 
+				   
 
-			  
+        # =====================
+        # 🟢 SCORING
+        # =====================
         if dip_3m > config["dip3"]:
             score += 20
             reason.append("3M Dip")
@@ -109,7 +147,7 @@ def run():
             score += 20
             reason.append("6M Deep Dip")
 
-        # 🔥 ETF-SPECIFIC RSI
+							   
         if config["rsi_low"] <= rsi <= config["rsi_high"]:
             if prev_rsi is not None and rsi > prev_rsi + 1:
                 score += 25
@@ -122,6 +160,9 @@ def run():
             score += 20
             reason.append("Trend")
 
+        # =====================
+        # 🎯 FINAL DECISION
+        # =====================
         action = "BUY" if score >= 60 else "HOLD"
 
         if action == "BUY":
