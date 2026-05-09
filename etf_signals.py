@@ -161,18 +161,69 @@ def run():
             reason.append("Trend")
 
         # =====================
+        # 🚫 DUPLICATE BUY PROTECTION
+        # =====================
+        ALLOW_BUY = True
+        
+        BUY_COOLDOWN_DAYS = 14
+        MIN_PRICE_DROP_FOR_REBUY = 3      # percent
+        MIN_NEW_DIP_IMPROVEMENT = 2       # percent
+        MIN_RSI_IMPROVEMENT = 5
+        
+        last_buy_price = None
+        last_buy_date = None
+        last_buy_score = None
+        
+        buy_data = buy.get_all_values()
+        
+        for r in reversed(buy_data[1:]):
+        
+            if len(r) < 4:
+                continue
+        
+            if r[1] != etf:
+                continue
+        
+            try:
+                last_buy_date = datetime.strptime(r[0], "%Y-%m-%d")
+                last_buy_price = float(r[2])
+                last_buy_score = float(r[3])
+                break
+            except:
+                continue
+        
+        
+        # =====================
         # 🎯 FINAL DECISION
         # =====================
         action = "BUY" if score >= 60 else "HOLD"
-
-        if action == "BUY":
-            buy.append_row([today, etf, close, score, ",".join(reason)])
-
-        sig.append_row([
-            today, etf, action, score,
-            close, rsi, ema100,
-            round(dip, 2), ",".join(reason)
-        ])
+        
+        
+        # =====================
+        # 🔒 BUY FILTER
+        # =====================
+        if action == "BUY" and last_buy_date is not None:
+        
+            days_since_buy = (datetime.now() - last_buy_date).days
+        
+            price_drop_from_last_buy = (
+                ((last_buy_price - close) / last_buy_price) * 100
+                if last_buy_price else 0
+            )
+        
+            dip_improvement = 0
+        
+            if len(highs_3m) > 0:
+                dip_improvement = dip_3m
+        
+            rsi_improvement = 0
+            ])
+        
+                sig.append_row([
+                    today, etf, action, score,
+                    close, rsi, ema100,
+                    round(dip, 2), ",".join(reason)
+                ])
 
 
 if __name__ == "__main__":
