@@ -2,7 +2,7 @@ name: Daily Portfolio Automation
 
 on:
   schedule:
-    - cron: "15 9 * * *"
+    - cron: "0 9 * * 1-5"
   workflow_dispatch:
 
 jobs:
@@ -26,4 +26,3 @@ jobs:
       - run: python dip_signals_engine.py
       - run: python PORTFOLIO_ANALYSIS.py
       - run: python fundamentals_engine.py
-      
