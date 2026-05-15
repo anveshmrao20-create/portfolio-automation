@@ -58,7 +58,7 @@ def run():
         rsi = safe_float(hist[-1][c+1])
         ema100 = safe_float(hist[-1][c+2])
 
-		
+  
         prev_rsi = safe_float(hist[-2][c+1]) if len(hist) > 2 else None
 
         reason = []
@@ -99,17 +99,9 @@ def run():
         # =====================
         highs_3m = [safe_float(r[c]) for r in hist[-60:] if safe_float(r[c]) is not None]
         highs_6m = [safe_float(r[c]) for r in hist[-120:] if safe_float(r[c]) is not None]
-	   
-		  
-		  
-		 
 
-	  
-		
-		  
-		  
-		 
-
+	
+	
         if not highs_3m:
             action = "SKIPPED"
             reason.append("Insufficient Data")
@@ -127,14 +119,15 @@ def run():
         dip = dip_3m
 
         dip_6m = 0
+
         if highs_6m:
             high_6m = max(highs_6m)
             dip_6m = ((high_6m - close) / high_6m) * 100
 
-							 
+		
 
-				 
-				   
+	 
+	   
 
         # =====================
         # 🟢 SCORING
@@ -147,11 +140,13 @@ def run():
             score += 20
             reason.append("6M Deep Dip")
 
-							   
+		  
         if config["rsi_low"] <= rsi <= config["rsi_high"]:
+
             if prev_rsi is not None and rsi > prev_rsi + 1:
                 score += 25
                 reason.append("RSI Rising")
+
             else:
                 score += 15
                 reason.append("RSI Neutral")
@@ -164,66 +159,95 @@ def run():
         # 🚫 DUPLICATE BUY PROTECTION
         # =====================
         ALLOW_BUY = True
-        
+
         BUY_COOLDOWN_DAYS = 14
-        MIN_PRICE_DROP_FOR_REBUY = 3      # percent
-        MIN_NEW_DIP_IMPROVEMENT = 2       # percent
+        MIN_PRICE_DROP_FOR_REBUY = 3
+        MIN_NEW_DIP_IMPROVEMENT = 2
         MIN_RSI_IMPROVEMENT = 5
-        
+
         last_buy_price = None
         last_buy_date = None
         last_buy_score = None
-        
+
         buy_data = buy.get_all_values()
-        
+
         for r in reversed(buy_data[1:]):
-        
+
             if len(r) < 4:
                 continue
-        
+
             if r[1] != etf:
                 continue
-        
+
             try:
                 last_buy_date = datetime.strptime(r[0], "%Y-%m-%d")
                 last_buy_price = float(r[2])
                 last_buy_score = float(r[3])
                 break
+
             except:
                 continue
-        
-        
+
+		
         # =====================
         # 🎯 FINAL DECISION
         # =====================
         action = "BUY" if score >= 60 else "HOLD"
-        
-        
+
+		
         # =====================
         # 🔒 BUY FILTER
         # =====================
         if action == "BUY" and last_buy_date is not None:
-        
+
             days_since_buy = (datetime.now() - last_buy_date).days
-        
+
             price_drop_from_last_buy = (
                 ((last_buy_price - close) / last_buy_price) * 100
                 if last_buy_price else 0
             )
-        
+
             dip_improvement = 0
-        
+
             if len(highs_3m) > 0:
                 dip_improvement = dip_3m
-        
+
             rsi_improvement = 0
+
+            if prev_rsi is not None:
+                rsi_improvement = rsi - prev_rsi
+
+		
+            # 🚫 SAME DIP ZONE PROTECTION
+            if (
+                days_since_buy < BUY_COOLDOWN_DAYS
+                and price_drop_from_last_buy < MIN_PRICE_DROP_FOR_REBUY
+                and dip_improvement < (config["dip3"] + MIN_NEW_DIP_IMPROVEMENT)
+                and rsi_improvement < MIN_RSI_IMPROVEMENT
+            ):
+
+                action = "HOLD"
+                reason.append("Duplicate Buy Prevented")
+
+		
+        # =====================
+        # 📝 SAVE BUY
+        # =====================
+        if action == "BUY":
+
+            buy.append_row([
+                today,
+                etf,
+                round(close, 2),
+                score,
+                ",".join(reason)
             ])
-        
-                sig.append_row([
-                    today, etf, action, score,
-                    close, rsi, ema100,
-                    round(dip, 2), ",".join(reason)
-                ])
+
+        sig.append_row([
+            today, etf, action, score,
+            close, rsi, ema100,
+            round(dip, 2), ",".join(reason)
+        ])
 
 
 if __name__ == "__main__":
