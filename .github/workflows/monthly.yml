@@ -2,7 +2,7 @@ name: Monthly SIP Automation
 
 on:
   schedule:
-    - cron: "30 9 5 * *"  # 3 PM IST on 5th
+    - cron: "45 8 5 * *"  # 2:15 PM IST on 5th
   workflow_dispatch:
 
 jobs:
