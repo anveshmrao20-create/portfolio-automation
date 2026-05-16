@@ -2,7 +2,7 @@ name: Daily Portfolio Automation
 
 on:
   schedule:
-    - cron: "0 9 * * 1-5"
+    - cron: "30 8 * * 1-5"
   workflow_dispatch:
 
 jobs:
