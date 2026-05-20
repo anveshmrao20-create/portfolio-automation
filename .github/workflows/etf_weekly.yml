@@ -3,7 +3,7 @@ name: ETF Weekly SIP
 on:
   schedule:
   # 1. 2:00 PM IST Monday-Friday
-  - cron: "30 8 * * 4"
+  - cron: "30 4 * * 4"
   workflow_dispatch:
 
 jobs:
