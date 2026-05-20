@@ -3,7 +3,7 @@ name: ETF Daily Automation
 on:
   schedule:
   # 1. 2:00 PM IST Monday-Friday
-  - cron: "30 8 * * 1-5"
+  - cron: "30 4 * * 1-5"
   workflow_dispatch:
 
 jobs:
